@@ -847,7 +847,7 @@ def main():
         
         with col1:
             ubicacion = st.selectbox(
-                "📍 Ubicación:",
+                "📍 Sede de Cotización:",
                 options=['caldas', 'chagualo'],
                 format_func=lambda x: 'Caldas' if x == 'caldas' else 'Chagualo, Girardota, San Cristóbal'
             )
@@ -1176,7 +1176,7 @@ def main():
                 
                 # Mostrar productos en tarjetas
                 for i, producto in enumerate(resultados['resultados']):
-                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}", expanded=i<3):
+                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}"):
                         col1, col2, col3 = st.columns(3)
                         
                         with col1:
