@@ -990,23 +990,9 @@ def main():
                     st.markdown("## 📄 Cotización Generada")
                     
                     # Botones de acción
-                    col1, col2, col3 = st.columns(3)
+                    col1, col2 = st.columns(2)
                     
                     with col1:
-                        # Botón de descarga directo
-                        if st.session_state.get('pdf_generado') is not None:
-                            st.download_button(
-                                label="📄 Descargar PDF",
-                                data=st.session_state.pdf_generado,
-                                file_name=st.session_state.nombre_archivo_pdf,
-                                mime="application/pdf",
-                                type="primary",
-                                use_container_width=True
-                            )
-                        else:
-                            st.error("❌ No se pudo generar el PDF")
-                    
-                    with col2:
                         if st.button("🆕 Nueva Cotización", use_container_width=True, key="nueva_lateral"):
                             st.session_state.productos_cotizacion = []
                             if 'pdf_generado' in st.session_state:
@@ -1015,7 +1001,7 @@ def main():
                                 del st.session_state.ultima_cotizacion
                             st.rerun()
                     
-                    with col3:
+                    with col2:
                         # Configurar datos de empresa para PDF
                         if st.button("⚙️ Configurar Empresa", use_container_width=True, key="config_lateral"):
                             st.session_state.mostrar_config_empresa = True
@@ -1063,6 +1049,21 @@ def main():
                     with st.expander("📋 Condiciones Generales de Construinmuniza"):
                         for condicion in cotizacion['condiciones']:
                             st.write(f"🔸 {condicion}")
+                    
+                    # Botón de descarga PDF al final
+                    st.markdown("---")
+                    if st.session_state.get('pdf_generado') is not None:
+                        st.download_button(
+                            label="📄 Descargar PDF",
+                            data=st.session_state.pdf_generado,
+                            file_name=st.session_state.nombre_archivo_pdf,
+                            mime="application/pdf",
+                            type="primary",
+                            use_container_width=True,
+                            key="descargar_final"
+                        )
+                    else:
+                        st.error("❌ No se pudo generar el PDF")
                     
                     # Configuración de empresa (modal) - mantenido en lateral
                     if st.session_state.get('mostrar_config_empresa', False):
