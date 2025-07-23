@@ -843,7 +843,7 @@ def main():
         st.markdown("### ⚙️ Configuración de Búsqueda")
         
         # Primera fila de controles
-        col1, col2, col3 = st.columns([1.5, 1, 1.5])
+        col1, col2, col3, col4 = st.columns([1.2, 1, 1, 1])
         
         with col1:
             ubicacion = st.selectbox(
@@ -859,6 +859,10 @@ def main():
             # Filtros de inmunización con checkboxes
             solo_inmunizada = st.checkbox("🛡️ Solo Inmunizada", value=False)
             solo_sin_inmunizar = st.checkbox("🚫 Solo Sin Inmunizar", value=False)
+        
+        with col4:
+            # Checkbox para descuento en la configuración principal
+            aplica_descuento = st.checkbox("💸 Aplica Descuento", value=False)
         
         st.markdown("---")
     
@@ -921,8 +925,6 @@ def main():
                 
             # Opciones de cotización
             st.markdown("### ⚙️ Opciones de Cotización")
-            
-            aplica_descuento = st.checkbox("💸 Aplica Descuento", value=False, key="descuento_lateral")
             
             if aplica_descuento:
                 descuento = st.number_input("💸 Descuento (%):", min_value=0, max_value=50, value=0, key="valor_descuento_lateral")
