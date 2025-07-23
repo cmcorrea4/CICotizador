@@ -847,7 +847,7 @@ def main():
         
         with col1:
             ubicacion = st.selectbox(
-                "📍 Ubicación:",
+                "📍 Sede de Cotización:",
                 options=['caldas', 'chagualo'],
                 format_func=lambda x: 'Caldas' if x == 'caldas' else 'Chagualo, Girardota, San Cristóbal'
             )
