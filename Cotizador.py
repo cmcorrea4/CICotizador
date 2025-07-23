@@ -1035,7 +1035,7 @@ def main():
                 
                 # Mostrar productos en tarjetas
                 for i, producto in enumerate(resultados['resultados']):
-                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}", expanded=i<3):
+                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}"):
                         col1, col2, col3 = st.columns(3)
                         
                         with col1:
@@ -1196,7 +1196,7 @@ def main():
                 st.info(f"**👤 Cliente:** {cotizacion['cliente']['nombre']}\n\n**🆔 NIT/Cédula:** {cotizacion['cliente'].get('nit_cedula', 'N/A')}\n\n**🏢 Empresa:** {cotizacion['cliente']['empresa']}")
             
             with col3:
-                st.info(f"**📍 Ubicación:** {cotizacion['ubicacion']}\n\n**💰 IVA incluido:** {'Sí' if cotizacion['incluye_iva'] else 'No'}")
+                st.info(f"**📍 Sede de Cotización:** {cotizacion['ubicacion']}\n\n**💰 IVA incluido:** {'Sí' if cotizacion['incluye_iva'] else 'No'}")
             
             # Detalles de productos
             st.markdown("### 📦 Productos Cotizados")
