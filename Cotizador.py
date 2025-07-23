@@ -843,7 +843,7 @@ def main():
         st.markdown("### ⚙️ Configuración de Búsqueda")
         
         # Primera fila de controles
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4 = st.columns([1.2, 1, 1, 1.2])
         
         with col1:
             ubicacion = st.selectbox(
@@ -861,14 +861,8 @@ def main():
             solo_sin_inmunizar = st.checkbox("🚫 Solo Sin Inmunizar", value=False)
         
         with col4:
-            # Botón para recargar catálogo
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🔄 Recargar Catálogo"):
-                resultado = st.session_state.generador.cargar_excel_automatico()
-                if resultado['exito']:
-                    st.success("✅ Catálogo recargado exitosamente")
-                else:
-                    st.error(f"❌ Error al recargar: {resultado['mensaje']}")
+            # Checkbox para descuento
+            aplica_descuento = st.checkbox("💸 Aplica Descuento", value=False)
         
         st.markdown("---")
     
@@ -961,7 +955,7 @@ def main():
                 
                 # Mostrar productos en tarjetas
                 for i, producto in enumerate(resultados['resultados']):
-                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}"):
+                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}", expanded=i<3):
                         col1, col2, col3 = st.columns(3)
                         
                         with col1:
@@ -1033,13 +1027,26 @@ def main():
                 
             # Opciones de cotización
             st.markdown("### ⚙️ Opciones de Cotización")
-            col1, col2 = st.columns(2)
             
-            with col1:
-                descuento = st.number_input("💸 Descuento (%):", min_value=0, max_value=50, value=0)
-            
-            with col2:
-                validez_dias = st.number_input("📅 Validez (días):", min_value=1, value=30)
+            if aplica_descuento:
+                # Si aplica descuento, mostrar campo en una columna
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    descuento = st.number_input("💸 Descuento (%):", min_value=0, max_value=50, value=0)
+                
+                with col2:
+                    validez_dias = st.number_input("📅 Validez (días):", min_value=1, value=30)
+            else:
+                # Si no aplica descuento, solo mostrar validez centrado
+                descuento = 0  # Descuento fijo en 0
+                col1, col2, col3 = st.columns([1, 1, 1])
+                
+                with col1:
+                    st.info("ℹ️ Sin descuento aplicado")
+                
+                with col2:
+                    validez_dias = st.number_input("📅 Validez (días):", min_value=1, value=30)
             
             # Generar cotización
             st.markdown("---")
