@@ -578,7 +578,7 @@ def main():
         page_title="Cotizador Construinmuniza",
         page_icon="🌲",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="collapsed"  # Cambiar a collapsed para minimizar sidebar
     )
     
     # CSS personalizado con colores Construinmuniza
@@ -587,6 +587,11 @@ def main():
     /* Tema claro con colores Construinmuniza */
     .stApp {
         background-color: #FAFAFA;
+    }
+    
+    /* Ocultar sidebar completamente */
+    section[data-testid="stSidebar"] {
+        display: none;
     }
     
     /* Título principal con branding Construinmuniza */
@@ -650,19 +655,6 @@ def main():
         color: #2C3E50;
         border: 1px solid #C8E6C9;
         border-radius: 8px;
-    }
-    
-    /* Sidebar con colores Construinmuniza */
-    section[data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        border-right: 1px solid #C8E6C9;
-    }
-    
-    section[data-testid="stSidebar"] h1,
-    section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3 {
-        color: #1B5E20 !important;
-        font-weight: 600;
     }
     
     /* Métricas */
@@ -801,6 +793,14 @@ def main():
     ::-webkit-scrollbar-thumb:hover {
         background: #81C784;
     }
+    
+    /* Containers especiales para cotización */
+    div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] {
+        background-color: #FFFFFF;
+        border-radius: 8px;
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+    }
 </style>
 """, unsafe_allow_html=True)
     
@@ -834,128 +834,133 @@ def main():
     if not st.session_state.get('catalogo_cargado', False):
         st.stop()
     
-    # Sidebar simplificado - solo cotización en progreso
-    st.sidebar.markdown("## 📋 Cotización en Progreso")
+    # Layout principal con dos columnas
+    col_main, col_cotizacion = st.columns([2, 1])
     
-    if 'productos_cotizacion' in st.session_state and st.session_state.productos_cotizacion:
-        total_items = sum(producto['cantidad'] for producto in st.session_state.productos_cotizacion)
-        st.sidebar.metric("📦 Productos", len(st.session_state.productos_cotizacion))
-        st.sidebar.metric("🔢 Cantidad Total", total_items)
+    with col_main:
+        # Configuración principal en la vista principal
+        st.markdown("### ⚙️ Configuración de Búsqueda")
         
-        # Resumen de productos en sidebar
-        st.sidebar.markdown("### 🌲 Productos Seleccionados:")
-        for i, producto in enumerate(st.session_state.productos_cotizacion):
-            with st.sidebar.expander(f"{producto['descripcion'][:25]}...", expanded=False):
-                st.write(f"**Cantidad:** {producto['cantidad']}")
-                st.write(f"**Precio:** {producto['precio']}")
-                if st.button("🗑️ Quitar", key=f"sidebar_remove_{i}"):
-                    st.session_state.productos_cotizacion.pop(i)
-                    st.rerun()
+        # Primera fila de controles
+        col1, col2, col3, col4 = st.columns(4)
         
-        # Botón para limpiar toda la cotización
-        if st.sidebar.button("🗑️ Limpiar Todo", type="secondary"):
-            st.session_state.productos_cotizacion = []
-            if 'pdf_generado' in st.session_state:
-                del st.session_state.pdf_generado
-            if 'ultima_cotizacion' in st.session_state:
-                del st.session_state.ultima_cotizacion
-            st.rerun()
-    else:
-        st.sidebar.info("No hay productos en la cotización")
-    
-    # Estadísticas del catálogo en sidebar
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 Estadísticas del Catálogo")
-    if st.session_state.generador.productos is not None:
-        total_productos = len(st.session_state.generador.productos)
-        st.sidebar.metric("📦 Total Productos", total_productos)
-        
-        # Mostrar tipos de madera disponibles
-        tipos_madera = st.session_state.generador.productos['TIPO MADERA'].value_counts()
-        st.sidebar.markdown("**🌲 Tipos disponibles:**")
-        for tipo, cantidad in tipos_madera.head(3).items():
-            st.sidebar.write(f"• {tipo}: {cantidad}")
-    
-    st.sidebar.markdown("---")
-    
-    # Configuración principal en la vista principal
-    st.markdown("### ⚙️ Configuración de Búsqueda")
-    
-    # Primera fila de controles
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        ubicacion = st.selectbox(
-            "📍 Ubicación:",
-            options=['caldas', 'chagualo'],
-            format_func=lambda x: 'Caldas' if x == 'caldas' else 'Chagualo, Girardota, San Cristóbal'
-        )
-    
-    with col2:
-        incluir_iva = st.checkbox("💰 Incluir IVA", value=True)
-    
-    with col3:
-        # Filtro de inmunización
-        inmunizacion_opcion = st.selectbox(
-            "🛡️ Tipo de Madera:",
-            options=['todas', 'inmunizada', 'sin_inmunizar'],
-            format_func=lambda x: {
-                'todas': 'Todas',
-                'inmunizada': 'Solo Inmunizada', 
-                'sin_inmunizar': 'Solo Sin Inmunizar'
-            }[x],
-            index=0
-        )
-    
-    with col4:
-        # Botón para recargar catálogo
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🔄 Recargar Catálogo"):
-            resultado = st.session_state.generador.cargar_excel_automatico()
-            if resultado['exito']:
-                st.success("✅ Catálogo recargado exitosamente")
-            else:
-                st.error(f"❌ Error al recargar: {resultado['mensaje']}")
-    
-    st.markdown("---")
-    
-    # Área principal - Búsqueda
-    st.markdown("### 🔍 Buscar Productos")
-    termino_busqueda = st.text_input(
-        "Describe el producto que buscas:",
-        placeholder="Ej: tabla, piso, vareta, estacón, alfarda, rústico..."
-    )
-    
-    # Realizar búsqueda
-    if termino_busqueda:
-        with st.spinner('🔍 Buscando productos...'):
-            # Determinar filtro de inmunización
-            solo_inmunizada = None
-            if inmunizacion_opcion == 'inmunizada':
-                solo_inmunizada = True
-            elif inmunizacion_opcion == 'sin_inmunizar':
-                solo_inmunizada = False
-            
-            resultados = st.session_state.generador.buscar_productos(
-                termino_busqueda, 
-                ubicacion=ubicacion, 
-                incluir_iva=incluir_iva,
-                limite=20,
-                solo_inmunizada=solo_inmunizada
+        with col1:
+            ubicacion = st.selectbox(
+                "📍 Ubicación:",
+                options=['caldas', 'chagualo'],
+                format_func=lambda x: 'Caldas' if x == 'caldas' else 'Chagualo, Girardota, San Cristóbal'
             )
         
-        if resultados['exito']:
-            # Mostrar información del filtro activo
-            filtro_info = ""
-            if inmunizacion_opcion == 'inmunizada':
-                filtro_info = " (Solo productos inmunizados)"
-            elif inmunizacion_opcion == 'sin_inmunizar':
-                filtro_info = " (Solo productos sin inmunizar)"
+        with col2:
+            incluir_iva = st.checkbox("💰 Incluir IVA", value=True)
+        
+        with col3:
+            # Filtros de inmunización con checkboxes
+            solo_inmunizada = st.checkbox("🛡️ Solo Inmunizada", value=False)
+            solo_sin_inmunizar = st.checkbox("🚫 Solo Sin Inmunizar", value=False)
+        
+        with col4:
+            # Botón para recargar catálogo
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🔄 Recargar Catálogo"):
+                resultado = st.session_state.generador.cargar_excel_automatico()
+                if resultado['exito']:
+                    st.success("✅ Catálogo recargado exitosamente")
+                else:
+                    st.error(f"❌ Error al recargar: {resultado['mensaje']}")
+        
+        st.markdown("---")
+    
+    # Columna de cotización en progreso
+    with col_cotizacion:
+        st.markdown("## 📋 Cotización en Progreso")
+        
+        if 'productos_cotizacion' in st.session_state and st.session_state.productos_cotizacion:
+            # Mostrar productos en formato de tarjetas como en la imagen
+            for i, producto in enumerate(st.session_state.productos_cotizacion):
+                # Crear una tarjeta para cada producto
+                with st.container(border=True):
+                    st.markdown(f"**🌲 {producto['descripcion'].upper()}**")
+                    
+                    # Información del producto en una línea
+                    st.markdown(f"📋 Ref: {producto['referencia']} | 🌲 {producto['tipo_madera']}")
+                    
+                    # Fila con cantidad, precio y botón eliminar
+                    col_info1, col_info2, col_btn = st.columns([1, 1, 1])
+                    
+                    with col_info1:
+                        st.markdown(f"📦 Cantidad: {producto['cantidad']}")
+                    
+                    with col_info2:
+                        st.markdown(f"💰 Precio: {producto['precio']}")
+                    
+                    with col_btn:
+                        if st.button("🗑️ Eliminar", key=f"eliminar_lateral_{i}", use_container_width=True):
+                            st.session_state.productos_cotizacion.pop(i)
+                            st.rerun()
             
-            st.markdown(f"### 📦 Productos encontrados ({resultados['total']}){filtro_info}")
+            # Total items al final
+            total_items = sum(producto['cantidad'] for producto in st.session_state.productos_cotizacion)
+            st.info(f"📊 **Total items:** {total_items}")
             
-            # Mostrar productos en tarjetas
-            for i, producto in enumerate(resultados['resultados']):
+            # Botón para limpiar toda la cotización
+            if st.button("🗑️ Limpiar Todo", type="secondary", use_container_width=True):
+                st.session_state.productos_cotizacion = []
+                if 'pdf_generado' in st.session_state:
+                    del st.session_state.pdf_generado
+                if 'ultima_cotizacion' in st.session_state:
+                    del st.session_state.ultima_cotizacion
+                st.rerun()
+        else:
+            st.info("No hay productos en la cotización")
+    
+    # Continuar con el contenido principal en la columna izquierda
+    with col_main:
+    
+        # Área principal - Búsqueda
+        st.markdown("### 🔍 Buscar Productos")
+        termino_busqueda = st.text_input(
+            "Describe el producto que buscas:",
+            placeholder="Ej: tabla, piso, vareta, estacón, alfarda, rústico..."
+        )
+        
+        # Realizar búsqueda
+        if termino_busqueda:
+            with st.spinner('🔍 Buscando productos...'):
+                # Determinar filtro de inmunización basado en checkboxes
+                solo_inmunizada_valor = None
+                
+                # Validar que no estén ambos checkboxes marcados
+                if solo_inmunizada and solo_sin_inmunizar:
+                    st.warning("⚠️ No puedes seleccionar ambos filtros a la vez. Mostrando todos los productos.")
+                    solo_inmunizada_valor = None
+                elif solo_inmunizada:
+                    solo_inmunizada_valor = True
+                elif solo_sin_inmunizar:
+                    solo_inmunizada_valor = False
+                else:
+                    solo_inmunizada_valor = None
+                
+                resultados = st.session_state.generador.buscar_productos(
+                    termino_busqueda, 
+                    ubicacion=ubicacion, 
+                    incluir_iva=incluir_iva,
+                    limite=20,
+                    solo_inmunizada=solo_inmunizada_valor
+                )
+            
+            if resultados['exito']:
+                # Mostrar información del filtro activo
+                filtro_info = ""
+                if solo_inmunizada and not solo_sin_inmunizar:
+                    filtro_info = " (Solo productos inmunizados)"
+                elif solo_sin_inmunizar and not solo_inmunizada:
+                    filtro_info = " (Solo productos sin inmunizar)"
+                
+                st.markdown(f"### 📦 Productos encontrados ({resultados['total']}){filtro_info}")
+                
+                # Mostrar productos en tarjetas
+                for i, producto in enumerate(resultados['resultados']):
                 with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}", expanded=i<3):
                     col1, col2, col3 = st.columns(3)
                     
