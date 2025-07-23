@@ -961,7 +961,7 @@ def main():
                 
                 # Mostrar productos en tarjetas
                 for i, producto in enumerate(resultados['resultados']):
-                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}", expanded=i<3):
+                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}"): # expanded=i<3
                         col1, col2, col3 = st.columns(3)
                         
                         with col1:
