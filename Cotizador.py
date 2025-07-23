@@ -836,18 +836,18 @@ def main():
         st.stop()
     
     # Layout principal con dos columnas
-    col_main, col_cotizacion = st.columns([2, 1])
+    col_main, col_cotizacion = st.columns([1.4, 1.2])
     
     with col_main:
         # Configuración principal en la vista principal
         st.markdown("### ⚙️ Configuración de Búsqueda")
         
         # Primera fila de controles
-        col1, col2, col3, col4 = st.columns([1.2, 1, 1, 1.2])
+        col1, col2, col3 = st.columns([1.5, 1, 1.5])
         
         with col1:
             ubicacion = st.selectbox(
-                "📍 Sede de Cotización:",
+                "📍 Ubicación:",
                 options=['caldas', 'chagualo'],
                 format_func=lambda x: 'Caldas' if x == 'caldas' else 'Chagualo, Girardota, San Cristóbal'
             )
@@ -859,10 +859,6 @@ def main():
             # Filtros de inmunización con checkboxes
             solo_inmunizada = st.checkbox("🛡️ Solo Inmunizada", value=False)
             solo_sin_inmunizar = st.checkbox("🚫 Solo Sin Inmunizar", value=False)
-        
-        with col4:
-            # Checkbox para descuento
-            aplica_descuento = st.checkbox("💸 Aplica Descuento", value=False)
         
         st.markdown("---")
     
@@ -906,147 +902,35 @@ def main():
                 if 'ultima_cotizacion' in st.session_state:
                     del st.session_state.ultima_cotizacion
                 st.rerun()
-        else:
-            st.info("No hay productos en la cotización")
-    
-    # Continuar con el contenido principal en la columna izquierda
-    with col_main:
-        # Área principal - Búsqueda
-        st.markdown("### 🔍 Buscar Productos")
-        termino_busqueda = st.text_input(
-            "Describe el producto que buscas:",
-            placeholder="Ej: tabla, piso, vareta, estacón, alfarda, rústico..."
-        )
-        
-        # Realizar búsqueda
-        if termino_busqueda:
-            with st.spinner('🔍 Buscando productos...'):
-                # Determinar filtro de inmunización basado en checkboxes
-                solo_inmunizada_valor = None
                 
-                # Validar que no estén ambos checkboxes marcados
-                if solo_inmunizada and solo_sin_inmunizar:
-                    st.warning("⚠️ No puedes seleccionar ambos filtros a la vez. Mostrando todos los productos.")
-                    solo_inmunizada_valor = None
-                elif solo_inmunizada:
-                    solo_inmunizada_valor = True
-                elif solo_sin_inmunizar:
-                    solo_inmunizada_valor = False
-                else:
-                    solo_inmunizada_valor = None
-                
-                resultados = st.session_state.generador.buscar_productos(
-                    termino_busqueda, 
-                    ubicacion=ubicacion, 
-                    incluir_iva=incluir_iva,
-                    limite=20,
-                    solo_inmunizada=solo_inmunizada_valor
-                )
-            
-            if resultados['exito']:
-                # Mostrar información del filtro activo
-                filtro_info = ""
-                if solo_inmunizada and not solo_sin_inmunizar:
-                    filtro_info = " (Solo productos inmunizados)"
-                elif solo_sin_inmunizar and not solo_inmunizada:
-                    filtro_info = " (Solo productos sin inmunizar)"
-                
-                st.markdown(f"### 📦 Productos encontrados ({resultados['total']}){filtro_info}")
-                
-                # Mostrar productos en tarjetas
-                for i, producto in enumerate(resultados['resultados']):
-                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}"):
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            st.write(f"**📋 Referencia:** {producto['referencia']}")
-                            st.write(f"**🌲 Tipo:** {producto['tipo_madera']}")
-                            st.write(f"**🎨 Acabado:** {producto['acabado']}")
-                        
-                        with col2:
-                            st.write(f"**🏗️ Uso:** {producto['uso']}")
-                            st.write(f"**🛡️ Garantía:** {producto['garantia']}")
-                            st.write(f"**📍 Ubicación:** {producto['ubicacion'].title()}")
-                        
-                        with col3:
-                            st.write(f"**💰 Precio:** {producto['precio']}")
-                            # Comparación de precios
-                            st.write("**💲 Comparación de precios:**")
-                            st.write(f"Caldas s/IVA: {st.session_state.generador.formatear_precio(producto['precios']['caldas_sin_iva'])}")
-                            st.write(f"Caldas c/IVA: {st.session_state.generador.formatear_precio(producto['precios']['caldas_con_iva'])}")
-                            st.write(f"Chagualo s/IVA: {st.session_state.generador.formatear_precio(producto['precios']['chagualo_sin_iva'])}")
-                            st.write(f"Chagualo c/IVA: {st.session_state.generador.formatear_precio(producto['precios']['chagualo_con_iva'])}")
-                        
-                        # Botón para agregar a cotización
-                        col_qty, col_btn = st.columns([1, 2])
-                        
-                        with col_qty:
-                            cantidad = st.number_input(
-                                f"Cantidad:",
-                                min_value=1,
-                                value=1,
-                                key=f"cantidad_{i}"
-                            )
-                        
-                        with col_btn:
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            if st.button(f"🛒 Agregar a Cotización", key=f"agregar_{i}"):
-                                if 'productos_cotizacion' not in st.session_state:
-                                    st.session_state.productos_cotizacion = []
-                                
-                                producto_con_cantidad = producto.copy()
-                                producto_con_cantidad['cantidad'] = cantidad
-                                st.session_state.productos_cotizacion.append(producto_con_cantidad)
-                                st.success(f"✅ {producto['descripcion']} agregado a la cotización")
-                                st.rerun()  # Forzar actualización de la interfaz
-            else:
-                st.warning(f"⚠️ {resultados['mensaje']}")
-        
-        # Sección de cotización - Solo mostrar si hay productos seleccionados
-        if 'productos_cotizacion' in st.session_state and st.session_state.productos_cotizacion:
+            # SECCIÓN MOVIDA: Generar Cotización Final
             st.markdown("---")
-            st.markdown("### 📋 Generar Cotización Final")
+            st.markdown("## 📋 Generar Cotización Final")
             
             # Resumen rápido
-            total_items = sum(producto['cantidad'] for producto in st.session_state.productos_cotizacion)
             st.info(f"📊 **{len(st.session_state.productos_cotizacion)} productos diferentes** | **{total_items} items totales**")
             
-            # Formulario de cliente y opciones
+            # Formulario de cliente
             st.markdown("### 👤 Datos del Cliente")
             
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                nombre_cliente = st.text_input("👤 Nombre completo:")
-                nit_cedula_cliente = st.text_input("🆔 NIT o Cédula:")
-                empresa_cliente = st.text_input("🏢 Empresa:")
-            
-            with col2:
-                telefono_cliente = st.text_input("📱 Teléfono:")
-                email_cliente = st.text_input("📧 Email:")
+            nombre_cliente = st.text_input("👤 Nombre completo:", key="nombre_lateral")
+            nit_cedula_cliente = st.text_input("🆔 NIT o Cédula:", key="nit_lateral")
+            empresa_cliente = st.text_input("🏢 Empresa:", key="empresa_lateral")
+            telefono_cliente = st.text_input("📱 Teléfono:", key="telefono_lateral")
+            email_cliente = st.text_input("📧 Email:", key="email_lateral")
                 
             # Opciones de cotización
             st.markdown("### ⚙️ Opciones de Cotización")
             
+            aplica_descuento = st.checkbox("💸 Aplica Descuento", value=False, key="descuento_lateral")
+            
             if aplica_descuento:
-                # Si aplica descuento, mostrar campo en una columna
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    descuento = st.number_input("💸 Descuento (%):", min_value=0, max_value=50, value=0)
-                
-                with col2:
-                    validez_dias = st.number_input("📅 Validez (días):", min_value=1, value=30)
+                descuento = st.number_input("💸 Descuento (%):", min_value=0, max_value=50, value=0, key="valor_descuento_lateral")
             else:
-                # Si no aplica descuento, solo mostrar validez centrado
-                descuento = 0  # Descuento fijo en 0
-                col1, col2, col3 = st.columns([1, 1, 1])
-                
-                with col1:
-                    st.info("ℹ️ Sin descuento aplicado")
-                
-                with col2:
-                    validez_dias = st.number_input("📅 Validez (días):", min_value=1, value=30)
+                descuento = 0
+                st.info("ℹ️ Sin descuento aplicado")
+            
+            validez_dias = st.number_input("📅 Validez (días):", min_value=1, value=30, key="validez_lateral")
             
             # Generar cotización
             st.markdown("---")
@@ -1098,159 +982,262 @@ def main():
                     except Exception as e:
                         st.error(f"❌ Error al generar PDF: {str(e)}")
                         st.session_state.pdf_generado = None
-                    
-                    # Botones de acción
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        # Botón de descarga directo
-                        if st.session_state.get('pdf_generado') is not None:
-                            st.download_button(
-                                label="📄 Descargar PDF",
-                                data=st.session_state.pdf_generado,
-                                file_name=st.session_state.nombre_archivo_pdf,
-                                mime="application/pdf",
-                                type="primary",
-                                use_container_width=True
-                            )
-                        else:
-                            st.error("❌ No se pudo generar el PDF")
-                    
-                    with col2:
-                        if st.button("🆕 Nueva Cotización", use_container_width=True):
-                            st.session_state.productos_cotizacion = []
-                            if 'pdf_generado' in st.session_state:
-                                del st.session_state.pdf_generado
-                            if 'ultima_cotizacion' in st.session_state:
-                                del st.session_state.ultima_cotizacion
-                            st.rerun()
-                    
-                    with col3:
-                        # Configurar datos de empresa para PDF
-                        if st.button("⚙️ Configurar Empresa", use_container_width=True):
-                            st.session_state.mostrar_config_empresa = True
-                    
-                    # Configuración de empresa (modal)
-                    if st.session_state.get('mostrar_config_empresa', False):
-                        st.markdown("---")
-                        st.markdown("### 🏢 Configuración de Empresa para PDF")
-                        
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            nombre_empresa = st.text_input("🏢 Nombre de la empresa:", 
-                                                         value=st.session_state.get('empresa_nombre', 'Construinmuniza'))
-                            nit_empresa = st.text_input("📄 NIT:", 
-                                                       value=st.session_state.get('empresa_nit', '900.XXX.XXX-X'))
-                            direccion_empresa = st.text_input("📍 Dirección:", 
-                                                             value=st.session_state.get('empresa_direccion', 'Calle XX # XX - XX'))
-                        
-                        with col2:
-                            telefono_empresa = st.text_input("📱 Teléfono:", 
-                                                           value=st.session_state.get('empresa_telefono', 'XXX-XXXX'))
-                            ciudad_empresa = st.text_input("🏙️ Ciudad:", 
-                                                         value=st.session_state.get('empresa_ciudad', 'Medellín'))
-                            email_empresa = st.text_input("📧 Email:", 
-                                                        value=st.session_state.get('empresa_email', 'ventas@construinmuniza.com'))
-                        
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            if st.button("💾 Guardar Configuración", use_container_width=True):
-                                st.session_state.empresa_nombre = nombre_empresa
-                                st.session_state.empresa_nit = nit_empresa
-                                st.session_state.empresa_direccion = direccion_empresa
-                                st.session_state.empresa_telefono = telefono_empresa
-                                st.session_state.empresa_ciudad = ciudad_empresa
-                                st.session_state.empresa_email = email_empresa
-                                st.session_state.mostrar_config_empresa = False
-                                
-                                # Regenerar PDF con nuevos datos de empresa
-                                if 'ultima_cotizacion' in st.session_state:
-                                    try:
-                                        datos_empresa_pdf = {
-                                            'nombre': nombre_empresa,
-                                            'nit': nit_empresa,
-                                            'direccion': direccion_empresa,
-                                            'telefono': telefono_empresa,
-                                            'ciudad': ciudad_empresa,
-                                            'email': email_empresa
-                                        }
-                                        pdf_buffer = st.session_state.generador.generar_pdf_cotizacion(
-                                            st.session_state.ultima_cotizacion, 
-                                            datos_empresa_pdf
-                                        )
-                                        st.session_state.pdf_generado = pdf_buffer.getvalue()
-                                    except:
-                                        pass
-                                
-                                st.success("✅ Configuración guardada")
-                                st.rerun()
-                        
-                        with col2:
-                            if st.button("❌ Cancelar", use_container_width=True):
-                                st.session_state.mostrar_config_empresa = False
-                                st.rerun()
-                        
-                        st.markdown("---")
-                    
-                    # Información de la cotización
-                    st.markdown(f"### 📄 Cotización {cotizacion['numero_cotizacion']}")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.info(f"**📅 Fecha:** {cotizacion['fecha']}\n\n**⏰ Vencimiento:** {cotizacion['fecha_vencimiento']}")
-                    
-                    with col2:
-                        st.info(f"**👤 Cliente:** {cotizacion['cliente']['nombre']}\n\n**🆔 NIT/Cédula:** {cotizacion['cliente'].get('nit_cedula', 'N/A')}\n\n**🏢 Empresa:** {cotizacion['cliente']['empresa']}")
-                    
-                    with col3:
-                        st.info(f"**📍 Ubicación:** {cotizacion['ubicacion']}\n\n**💰 IVA incluido:** {'Sí' if cotizacion['incluye_iva'] else 'No'}")
-                    
-                    # Detalles de productos
-                    st.markdown("### 📦 Productos Cotizados")
-                    df_cotizacion = pd.DataFrame(cotizacion['items'])
-                    st.dataframe(df_cotizacion[['referencia', 'descripcion', 'tipo_madera', 'cantidad', 'precio_unitario', 'total']], 
-                               use_container_width=True,
-                               column_config={
-                                   "referencia": "📋 Referencia",
-                                   "descripcion": "🌲 Descripción",
-                                   "tipo_madera": "🌲 Tipo",
-                                   "cantidad": "📦 Cantidad",
-                                   "precio_unitario": "💰 Precio Unitario",
-                                   "total": "💵 Total"
-                               })
-                    
-                    # Resumen financiero
-                    st.markdown("### 💰 Resumen Financiero")
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        st.markdown(f'<div class="metric-container"><h3>{cotizacion["resumen"]["subtotal"]}</h3><p>Subtotal</p></div>', unsafe_allow_html=True)
-                    
-                    with col2:
-                        if cotizacion['resumen']['descuento']:
-                            st.markdown(f'<div class="metric-container"><h3>{cotizacion["resumen"]["descuento"]}</h3><p>Descuento</p></div>', unsafe_allow_html=True)
-                    
-                    with col3:
-                        st.markdown(f'<div class="metric-container" style="background-color: #E8F5E8; border: 2px solid #1B5E20;"><h2 style="color: #1B5E20;">{cotizacion["resumen"]["total"]}</h2><p><strong>TOTAL</strong></p></div>', unsafe_allow_html=True)
-                    
-                    # Condiciones
-                    with st.expander("📋 Condiciones Generales de Construinmuniza"):
-                        for condicion in cotizacion['condiciones']:
-                            st.write(f"🔸 {condicion}")
-                    
-                    # Botón para limpiar cotización
-                    st.markdown("---")
-                    if st.button("🗑️ Limpiar Cotización Completa", key="limpiar_final"):
-                        st.session_state.productos_cotizacion = []
-                        if 'pdf_generado' in st.session_state:
-                            del st.session_state.pdf_generado
-                        if 'ultima_cotizacion' in st.session_state:
-                            del st.session_state.ultima_cotizacion
-                        st.rerun()
                 else:
                     st.error("❌ Por favor, ingresa al menos el nombre del cliente.")
+        else:
+            st.info("No hay productos en la cotización")
+    
+    # Continuar con el contenido principal en la columna izquierda
+    with col_main:
+        # Área principal - Búsqueda
+        st.markdown("### 🔍 Buscar Productos")
+        termino_busqueda = st.text_input(
+            "Describe el producto que buscas:",
+            placeholder="Ej: tabla, piso, vareta, estacón, alfarda, rústico..."
+        )
+        
+        # Realizar búsqueda
+        if termino_busqueda:
+            with st.spinner('🔍 Buscando productos...'):
+                # Determinar filtro de inmunización basado en checkboxes
+                solo_inmunizada_valor = None
+                
+                # Validar que no estén ambos checkboxes marcados
+                if solo_inmunizada and solo_sin_inmunizar:
+                    st.warning("⚠️ No puedes seleccionar ambos filtros a la vez. Mostrando todos los productos.")
+                    solo_inmunizada_valor = None
+                elif solo_inmunizada:
+                    solo_inmunizada_valor = True
+                elif solo_sin_inmunizar:
+                    solo_inmunizada_valor = False
+                else:
+                    solo_inmunizada_valor = None
+                
+                resultados = st.session_state.generador.buscar_productos(
+                    termino_busqueda, 
+                    ubicacion=ubicacion, 
+                    incluir_iva=incluir_iva,
+                    limite=20,
+                    solo_inmunizada=solo_inmunizada_valor
+                )
+            
+            if resultados['exito']:
+                # Mostrar información del filtro activo
+                filtro_info = ""
+                if solo_inmunizada and not solo_sin_inmunizar:
+                    filtro_info = " (Solo productos inmunizados)"
+                elif solo_sin_inmunizar and not solo_inmunizada:
+                    filtro_info = " (Solo productos sin inmunizar)"
+                
+                st.markdown(f"### 📦 Productos encontrados ({resultados['total']}){filtro_info}")
+                
+                # Mostrar productos en tarjetas
+                for i, producto in enumerate(resultados['resultados']):
+                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}", expanded=i<3):
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            st.write(f"**📋 Referencia:** {producto['referencia']}")
+                            st.write(f"**🌲 Tipo:** {producto['tipo_madera']}")
+                            st.write(f"**🎨 Acabado:** {producto['acabado']}")
+                        
+                        with col2:
+                            st.write(f"**🏗️ Uso:** {producto['uso']}")
+                            st.write(f"**🛡️ Garantía:** {producto['garantia']}")
+                            st.write(f"**📍 Ubicación:** {producto['ubicacion'].title()}")
+                        
+                        with col3:
+                            st.write(f"**💰 Precio:** {producto['precio']}")
+                            # Comparación de precios
+                            st.write("**💲 Comparación de precios:**")
+                            st.write(f"Caldas s/IVA: {st.session_state.generador.formatear_precio(producto['precios']['caldas_sin_iva'])}")
+                            st.write(f"Caldas c/IVA: {st.session_state.generador.formatear_precio(producto['precios']['caldas_con_iva'])}")
+                            st.write(f"Chagualo s/IVA: {st.session_state.generador.formatear_precio(producto['precios']['chagualo_sin_iva'])}")
+                            st.write(f"Chagualo c/IVA: {st.session_state.generador.formatear_precio(producto['precios']['chagualo_con_iva'])}")
+                        
+                        # Botón para agregar a cotización
+                        col_qty, col_btn = st.columns([1, 2])
+                        
+                        with col_qty:
+                            cantidad = st.number_input(
+                                f"Cantidad:",
+                                min_value=1,
+                                value=1,
+                                key=f"cantidad_{i}"
+                            )
+                        
+                        with col_btn:
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            if st.button(f"🛒 Agregar a Cotización", key=f"agregar_{i}"):
+                                if 'productos_cotizacion' not in st.session_state:
+                                    st.session_state.productos_cotizacion = []
+                                
+                                producto_con_cantidad = producto.copy()
+                                producto_con_cantidad['cantidad'] = cantidad
+                                st.session_state.productos_cotizacion.append(producto_con_cantidad)
+                                st.success(f"✅ {producto['descripcion']} agregado a la cotización")
+                                st.rerun()  # Forzar actualización de la interfaz
+            else:
+                st.warning(f"⚠️ {resultados['mensaje']}")
+
+    # Mostrar resultados de cotización generada en la columna principal si existe
+    if 'ultima_cotizacion' in st.session_state:
+        with col_main:
+            cotizacion = st.session_state.ultima_cotizacion
+            
+            st.markdown("---")
+            st.markdown("## 📄 Cotización Generada")
+            
+            # Botones de acción
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                # Botón de descarga directo
+                if st.session_state.get('pdf_generado') is not None:
+                    st.download_button(
+                        label="📄 Descargar PDF",
+                        data=st.session_state.pdf_generado,
+                        file_name=st.session_state.nombre_archivo_pdf,
+                        mime="application/pdf",
+                        type="primary",
+                        use_container_width=True
+                    )
+                else:
+                    st.error("❌ No se pudo generar el PDF")
+            
+            with col2:
+                if st.button("🆕 Nueva Cotización", use_container_width=True):
+                    st.session_state.productos_cotizacion = []
+                    if 'pdf_generado' in st.session_state:
+                        del st.session_state.pdf_generado
+                    if 'ultima_cotizacion' in st.session_state:
+                        del st.session_state.ultima_cotizacion
+                    st.rerun()
+            
+            with col3:
+                # Configurar datos de empresa para PDF
+                if st.button("⚙️ Configurar Empresa", use_container_width=True):
+                    st.session_state.mostrar_config_empresa = True
+            
+            # Configuración de empresa (modal)
+            if st.session_state.get('mostrar_config_empresa', False):
+                st.markdown("---")
+                st.markdown("### 🏢 Configuración de Empresa para PDF")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    nombre_empresa = st.text_input("🏢 Nombre de la empresa:", 
+                                                 value=st.session_state.get('empresa_nombre', 'Construinmuniza'))
+                    nit_empresa = st.text_input("📄 NIT:", 
+                                               value=st.session_state.get('empresa_nit', '900.XXX.XXX-X'))
+                    direccion_empresa = st.text_input("📍 Dirección:", 
+                                                     value=st.session_state.get('empresa_direccion', 'Calle XX # XX - XX'))
+                
+                with col2:
+                    telefono_empresa = st.text_input("📱 Teléfono:", 
+                                                   value=st.session_state.get('empresa_telefono', 'XXX-XXXX'))
+                    ciudad_empresa = st.text_input("🏙️ Ciudad:", 
+                                                 value=st.session_state.get('empresa_ciudad', 'Medellín'))
+                    email_empresa = st.text_input("📧 Email:", 
+                                                value=st.session_state.get('empresa_email', 'ventas@construinmuniza.com'))
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("💾 Guardar Configuración", use_container_width=True):
+                        st.session_state.empresa_nombre = nombre_empresa
+                        st.session_state.empresa_nit = nit_empresa
+                        st.session_state.empresa_direccion = direccion_empresa
+                        st.session_state.empresa_telefono = telefono_empresa
+                        st.session_state.empresa_ciudad = ciudad_empresa
+                        st.session_state.empresa_email = email_empresa
+                        st.session_state.mostrar_config_empresa = False
+                        
+                        # Regenerar PDF con nuevos datos de empresa
+                        if 'ultima_cotizacion' in st.session_state:
+                            try:
+                                datos_empresa_pdf = {
+                                    'nombre': nombre_empresa,
+                                    'nit': nit_empresa,
+                                    'direccion': direccion_empresa,
+                                    'telefono': telefono_empresa,
+                                    'ciudad': ciudad_empresa,
+                                    'email': email_empresa
+                                }
+                                pdf_buffer = st.session_state.generador.generar_pdf_cotizacion(
+                                    st.session_state.ultima_cotizacion, 
+                                    datos_empresa_pdf
+                                )
+                                st.session_state.pdf_generado = pdf_buffer.getvalue()
+                            except:
+                                pass
+                        
+                        st.success("✅ Configuración guardada")
+                        st.rerun()
+                
+                with col2:
+                    if st.button("❌ Cancelar", use_container_width=True):
+                        st.session_state.mostrar_config_empresa = False
+                        st.rerun()
+                
+                st.markdown("---")
+            
+            # Información de la cotización
+            st.markdown(f"### 📄 Cotización {cotizacion['numero_cotizacion']}")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.info(f"**📅 Fecha:** {cotizacion['fecha']}\n\n**⏰ Vencimiento:** {cotizacion['fecha_vencimiento']}")
+            
+            with col2:
+                st.info(f"**👤 Cliente:** {cotizacion['cliente']['nombre']}\n\n**🆔 NIT/Cédula:** {cotizacion['cliente'].get('nit_cedula', 'N/A')}\n\n**🏢 Empresa:** {cotizacion['cliente']['empresa']}")
+            
+            with col3:
+                st.info(f"**📍 Ubicación:** {cotizacion['ubicacion']}\n\n**💰 IVA incluido:** {'Sí' if cotizacion['incluye_iva'] else 'No'}")
+            
+            # Detalles de productos
+            st.markdown("### 📦 Productos Cotizados")
+            df_cotizacion = pd.DataFrame(cotizacion['items'])
+            st.dataframe(df_cotizacion[['referencia', 'descripcion', 'tipo_madera', 'cantidad', 'precio_unitario', 'total']], 
+                       use_container_width=True,
+                       column_config={
+                           "referencia": "📋 Referencia",
+                           "descripcion": "🌲 Descripción",
+                           "tipo_madera": "🌲 Tipo",
+                           "cantidad": "📦 Cantidad",
+                           "precio_unitario": "💰 Precio Unitario",
+                           "total": "💵 Total"
+                       })
+            
+            # Resumen financiero
+            st.markdown("### 💰 Resumen Financiero")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown(f'<div class="metric-container"><h3>{cotizacion["resumen"]["subtotal"]}</h3><p>Subtotal</p></div>', unsafe_allow_html=True)
+            
+            with col2:
+                if cotizacion['resumen']['descuento']:
+                    st.markdown(f'<div class="metric-container"><h3>{cotizacion["resumen"]["descuento"]}</h3><p>Descuento</p></div>', unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown(f'<div class="metric-container" style="background-color: #E8F5E8; border: 2px solid #1B5E20;"><h2 style="color: #1B5E20;">{cotizacion["resumen"]["total"]}</h2><p><strong>TOTAL</strong></p></div>', unsafe_allow_html=True)
+            
+            # Condiciones
+            with st.expander("📋 Condiciones Generales de Construinmuniza"):
+                for condicion in cotizacion['condiciones']:
+                    st.write(f"🔸 {condicion}")
+            
+            # Botón para limpiar cotización
+            st.markdown("---")
+            if st.button("🗑️ Limpiar Cotización Completa", key="limpiar_final"):
+                st.session_state.productos_cotizacion = []
+                if 'pdf_generado' in st.session_state:
+                    del st.session_state.pdf_generado
+                if 'ultima_cotizacion' in st.session_state:
+                    del st.session_state.ultima_cotizacion
+                st.rerun()
 
 if __name__ == "__main__":
     main()
