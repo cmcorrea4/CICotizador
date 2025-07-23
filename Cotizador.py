@@ -847,7 +847,7 @@ def main():
         
         with col1:
             ubicacion = st.selectbox(
-                "📍 Sede de Cotización:",
+                "📍 Ubicación:",
                 options=['caldas', 'chagualo'],
                 format_func=lambda x: 'Caldas' if x == 'caldas' else 'Chagualo, Girardota, San Cristóbal'
             )
@@ -959,9 +959,6 @@ def main():
                         opciones
                     )
                     
-                    # Mostrar cotización
-                    st.success("✅ Cotización generada exitosamente!")
-                    
                     # Guardar cotización en session_state para descargar PDF
                     st.session_state.ultima_cotizacion = cotizacion
                     
@@ -985,144 +982,151 @@ def main():
                         st.error(f"❌ Error al generar PDF: {str(e)}")
                         st.session_state.pdf_generado = None
                     
-                    # SECCIONES MOVIDAS A LA COLUMNA LATERAL
-                    st.markdown("---")
-                    st.markdown("## 📄 Cotización Generada")
-                    
-                    # Botones de acción
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        if st.button("🆕 Nueva Cotización", use_container_width=True, key="nueva_lateral"):
-                            st.session_state.productos_cotizacion = []
-                            if 'pdf_generado' in st.session_state:
-                                del st.session_state.pdf_generado
-                            if 'ultima_cotizacion' in st.session_state:
-                                del st.session_state.ultima_cotizacion
-                            st.rerun()
-                    
-                    with col2:
-                        # Configurar datos de empresa para PDF
-                        if st.button("⚙️ Configurar Empresa", use_container_width=True, key="config_lateral"):
-                            st.session_state.mostrar_config_empresa = True
-                    
-                    # Información de la cotización
-                    st.markdown(f"### 📄 Cotización {cotizacion['numero_cotizacion']}")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.info(f"**📅 Fecha:** {cotizacion['fecha']}\n\n**⏰ Vencimiento:** {cotizacion['fecha_vencimiento']}")
-                    
-                    with col2:
-                        st.info(f"**👤 Cliente:** {cotizacion['cliente']['nombre']}\n\n**🆔 NIT/Cédula:** {cotizacion['cliente'].get('nit_cedula', 'N/A')}\n\n**🏢 Empresa:** {cotizacion['cliente']['empresa']}")
-                    
-                    with col3:
-                        st.info(f"**📍 Sede de Cotización:** {cotizacion['ubicacion']}\n\n**💰 IVA incluido:** {'Sí' if cotizacion['incluye_iva'] else 'No'}")
-                    
-                    # Detalles de productos (versión compacta para lateral)
-                    st.markdown("### 📦 Productos Cotizados")
-                    df_cotizacion = pd.DataFrame(cotizacion['items'])
-                    st.dataframe(df_cotizacion[['referencia', 'descripcion', 'cantidad', 'precio_unitario', 'total']], 
-                               use_container_width=True,
-                               height=200,
-                               column_config={
-                                   "referencia": "📋 Referencia",
-                                   "descripcion": "🌲 Descripción",
-                                   "cantidad": "📦 Cantidad",
-                                   "precio_unitario": "💰 Precio Unitario",
-                                   "total": "💵 Total"
-                               })
-                    
-                    # Resumen financiero (versión compacta)
-                    st.markdown("### 💰 Resumen Financiero")
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown(f'<div class="metric-container"><h4>{cotizacion["resumen"]["subtotal"]}</h4><p>Subtotal</p></div>', unsafe_allow_html=True)
-                        if cotizacion['resumen']['descuento']:
-                            st.markdown(f'<div class="metric-container"><h4>{cotizacion["resumen"]["descuento"]}</h4><p>Descuento</p></div>', unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown(f'<div class="metric-container" style="background-color: #E8F5E8; border: 2px solid #1B5E20;"><h3 style="color: #1B5E20;">{cotizacion["resumen"]["total"]}</h3><p><strong>TOTAL</strong></p></div>', unsafe_allow_html=True)
-                    
-                    # Condiciones (compactas)
-                    with st.expander("📋 Condiciones Generales de Construinmuniza"):
-                        for condicion in cotizacion['condiciones']:
-                            st.write(f"🔸 {condicion}")
-                    
-                    # Botón de descarga PDF al final
-                    st.markdown("---")
-                    if st.session_state.get('pdf_generado') is not None:
-                        st.download_button(
-                            label="📄 Descargar PDF",
-                            data=st.session_state.pdf_generado,
-                            file_name=st.session_state.nombre_archivo_pdf,
-                            mime="application/pdf",
-                            type="primary",
-                            use_container_width=True,
-                            key="descargar_final"
-                        )
-                    else:
-                        st.error("❌ No se pudo generar el PDF")
-                    
-                    # Configuración de empresa (modal) - mantenido en lateral
-                    if st.session_state.get('mostrar_config_empresa', False):
-                        st.markdown("---")
-                        st.markdown("### 🏢 Configuración de Empresa para PDF")
-                        
-                        nombre_empresa = st.text_input("🏢 Nombre de la empresa:", 
-                                                     value=st.session_state.get('empresa_nombre', 'Construinmuniza'), key="empresa_nombre_lateral")
-                        nit_empresa = st.text_input("📄 NIT:", 
-                                                   value=st.session_state.get('empresa_nit', '900.XXX.XXX-X'), key="empresa_nit_lateral")
-                        direccion_empresa = st.text_input("📍 Dirección:", 
-                                                         value=st.session_state.get('empresa_direccion', 'Calle XX # XX - XX'), key="empresa_direccion_lateral")
-                        telefono_empresa = st.text_input("📱 Teléfono:", 
-                                                       value=st.session_state.get('empresa_telefono', 'XXX-XXXX'), key="empresa_telefono_lateral")
-                        ciudad_empresa = st.text_input("🏙️ Ciudad:", 
-                                                     value=st.session_state.get('empresa_ciudad', 'Medellín'), key="empresa_ciudad_lateral")
-                        email_empresa = st.text_input("📧 Email:", 
-                                                    value=st.session_state.get('empresa_email', 'ventas@construinmuniza.com'), key="empresa_email_lateral")
-                        
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            if st.button("💾 Guardar Configuración", use_container_width=True, key="guardar_lateral"):
-                                st.session_state.empresa_nombre = nombre_empresa
-                                st.session_state.empresa_nit = nit_empresa
-                                st.session_state.empresa_direccion = direccion_empresa
-                                st.session_state.empresa_telefono = telefono_empresa
-                                st.session_state.empresa_ciudad = ciudad_empresa
-                                st.session_state.empresa_email = email_empresa
-                                st.session_state.mostrar_config_empresa = False
-                                
-                                # Regenerar PDF con nuevos datos de empresa
-                                if 'ultima_cotizacion' in st.session_state:
-                                    try:
-                                        datos_empresa_pdf = {
-                                            'nombre': nombre_empresa,
-                                            'nit': nit_empresa,
-                                            'direccion': direccion_empresa,
-                                            'telefono': telefono_empresa,
-                                            'ciudad': ciudad_empresa,
-                                            'email': email_empresa
-                                        }
-                                        pdf_buffer = st.session_state.generador.generar_pdf_cotizacion(
-                                            st.session_state.ultima_cotizacion, 
-                                            datos_empresa_pdf
-                                        )
-                                        st.session_state.pdf_generado = pdf_buffer.getvalue()
-                                    except:
-                                        pass
-                                
-                                st.success("✅ Configuración guardada")
-                                st.rerun()
-                        
-                        with col2:
-                            if st.button("❌ Cancelar", use_container_width=True, key="cancelar_lateral"):
-                                st.session_state.mostrar_config_empresa = False
-                                st.rerun()
+                    # Mostrar mensaje de éxito
+                    st.success("✅ Cotización generada exitosamente!")
+                    st.rerun()  # Recargar para mostrar la cotización
                 else:
                     st.error("❌ Por favor, ingresa al menos el nombre del cliente.")
+        
+        # MOSTRAR COTIZACIÓN GENERADA (FUERA DEL BOTÓN) - Solo si existe una cotización
+        if 'ultima_cotizacion' in st.session_state and st.session_state.ultima_cotizacion:
+            cotizacion = st.session_state.ultima_cotizacion
+            
+            st.markdown("---")
+            st.markdown("## 📄 Cotización Generada")
+            
+            # Botones de acción
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("🆕 Nueva Cotización", use_container_width=True, key="nueva_lateral"):
+                    st.session_state.productos_cotizacion = []
+                    if 'pdf_generado' in st.session_state:
+                        del st.session_state.pdf_generado
+                    if 'ultima_cotizacion' in st.session_state:
+                        del st.session_state.ultima_cotizacion
+                    st.rerun()
+            
+            with col2:
+                # Configurar datos de empresa para PDF
+                if st.button("⚙️ Configurar Empresa", use_container_width=True, key="config_lateral"):
+                    st.session_state.mostrar_config_empresa = True
+            
+            # Información de la cotización
+            st.markdown(f"### 📄 Cotización {cotizacion['numero_cotizacion']}")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.info(f"**📅 Fecha:** {cotizacion['fecha']}\n\n**⏰ Vencimiento:** {cotizacion['fecha_vencimiento']}")
+            
+            with col2:
+                st.info(f"**👤 Cliente:** {cotizacion['cliente']['nombre']}\n\n**🆔 NIT/Cédula:** {cotizacion['cliente'].get('nit_cedula', 'N/A')}\n\n**🏢 Empresa:** {cotizacion['cliente']['empresa']}")
+            
+            with col3:
+                st.info(f"**📍 Sede de Cotización:** {cotizacion['ubicacion']}\n\n**💰 IVA incluido:** {'Sí' if cotizacion['incluye_iva'] else 'No'}")
+            
+            # Detalles de productos (versión compacta para lateral)
+            st.markdown("### 📦 Productos Cotizados")
+            df_cotizacion = pd.DataFrame(cotizacion['items'])
+            st.dataframe(df_cotizacion[['referencia', 'descripcion', 'cantidad', 'precio_unitario', 'total']], 
+                       use_container_width=True,
+                       height=200,
+                       column_config={
+                           "referencia": "📋 Referencia",
+                           "descripcion": "🌲 Descripción",
+                           "cantidad": "📦 Cantidad",
+                           "precio_unitario": "💰 Precio Unitario",
+                           "total": "💵 Total"
+                       })
+            
+            # Resumen financiero (versión compacta)
+            st.markdown("### 💰 Resumen Financiero")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown(f'<div class="metric-container"><h4>{cotizacion["resumen"]["subtotal"]}</h4><p>Subtotal</p></div>', unsafe_allow_html=True)
+                if cotizacion['resumen']['descuento']:
+                    st.markdown(f'<div class="metric-container"><h4>{cotizacion["resumen"]["descuento"]}</h4><p>Descuento</p></div>', unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f'<div class="metric-container" style="background-color: #E8F5E8; border: 2px solid #1B5E20;"><h3 style="color: #1B5E20;">{cotizacion["resumen"]["total"]}</h3><p><strong>TOTAL</strong></p></div>', unsafe_allow_html=True)
+            
+            # Condiciones (compactas)
+            with st.expander("📋 Condiciones Generales de Construinmuniza"):
+                for condicion in cotizacion['condiciones']:
+                    st.write(f"🔸 {condicion}")
+            
+            # Botón de descarga PDF al final
+            st.markdown("---")
+            if st.session_state.get('pdf_generado') is not None:
+                st.download_button(
+                    label="📄 Descargar PDF",
+                    data=st.session_state.pdf_generado,
+                    file_name=st.session_state.nombre_archivo_pdf,
+                    mime="application/pdf",
+                    type="primary",
+                    use_container_width=True,
+                    key="descargar_final"
+                )
+            else:
+                st.error("❌ No se pudo generar el PDF")
+            
+            # Configuración de empresa (modal) - mantenido en lateral
+            if st.session_state.get('mostrar_config_empresa', False):
+                st.markdown("---")
+                st.markdown("### 🏢 Configuración de Empresa para PDF")
+                
+                nombre_empresa = st.text_input("🏢 Nombre de la empresa:", 
+                                             value=st.session_state.get('empresa_nombre', 'Construinmuniza'), key="empresa_nombre_lateral")
+                nit_empresa = st.text_input("📄 NIT:", 
+                                           value=st.session_state.get('empresa_nit', '900.XXX.XXX-X'), key="empresa_nit_lateral")
+                direccion_empresa = st.text_input("📍 Dirección:", 
+                                                 value=st.session_state.get('empresa_direccion', 'Calle XX # XX - XX'), key="empresa_direccion_lateral")
+                telefono_empresa = st.text_input("📱 Teléfono:", 
+                                               value=st.session_state.get('empresa_telefono', 'XXX-XXXX'), key="empresa_telefono_lateral")
+                ciudad_empresa = st.text_input("🏙️ Ciudad:", 
+                                             value=st.session_state.get('empresa_ciudad', 'Medellín'), key="empresa_ciudad_lateral")
+                email_empresa = st.text_input("📧 Email:", 
+                                            value=st.session_state.get('empresa_email', 'ventas@construinmuniza.com'), key="empresa_email_lateral")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("💾 Guardar Configuración", use_container_width=True, key="guardar_lateral"):
+                        st.session_state.empresa_nombre = nombre_empresa
+                        st.session_state.empresa_nit = nit_empresa
+                        st.session_state.empresa_direccion = direccion_empresa
+                        st.session_state.empresa_telefono = telefono_empresa
+                        st.session_state.empresa_ciudad = ciudad_empresa
+                        st.session_state.empresa_email = email_empresa
+                        st.session_state.mostrar_config_empresa = False
+                        
+                        # Regenerar PDF con nuevos datos de empresa
+                        if 'ultima_cotizacion' in st.session_state:
+                            try:
+                                datos_empresa_pdf = {
+                                    'nombre': nombre_empresa,
+                                    'nit': nit_empresa,
+                                    'direccion': direccion_empresa,
+                                    'telefono': telefono_empresa,
+                                    'ciudad': ciudad_empresa,
+                                    'email': email_empresa
+                                }
+                                pdf_buffer = st.session_state.generador.generar_pdf_cotizacion(
+                                    st.session_state.ultima_cotizacion, 
+                                    datos_empresa_pdf
+                                )
+                                st.session_state.pdf_generado = pdf_buffer.getvalue()
+                            except:
+                                pass
+                        
+                        st.success("✅ Configuración guardada")
+                        st.rerun()
+                
+                with col2:
+                    if st.button("❌ Cancelar", use_container_width=True, key="cancelar_lateral"):
+                        st.session_state.mostrar_config_empresa = False
+                        st.rerun()
         else:
             st.info("No hay productos en la cotización")
     
@@ -1172,7 +1176,7 @@ def main():
                 
                 # Mostrar productos en tarjetas
                 for i, producto in enumerate(resultados['resultados']):
-                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}"):
+                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}", expanded=i<3):
                         col1, col2, col3 = st.columns(3)
                         
                         with col1:
