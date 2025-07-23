@@ -961,7 +961,7 @@ def main():
                 
                 # Mostrar productos en tarjetas
                 for i, producto in enumerate(resultados['resultados']):
-                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}"): # expanded=i<3
+                    with st.expander(f"🌲 {producto['descripcion']} - {producto['precio']}", expanded=i<3):
                         col1, col2, col3 = st.columns(3)
                         
                         with col1:
@@ -1004,6 +1004,7 @@ def main():
                                 producto_con_cantidad['cantidad'] = cantidad
                                 st.session_state.productos_cotizacion.append(producto_con_cantidad)
                                 st.success(f"✅ {producto['descripcion']} agregado a la cotización")
+                                st.rerun()  # Forzar actualización de la interfaz
             else:
                 st.warning(f"⚠️ {resultados['mensaje']}")
         
