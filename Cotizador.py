@@ -36,11 +36,11 @@ class GeneradorCotizacionesMadera:
         """Cargar productos desde archivo Excel automáticamente"""
         # Posibles ubicaciones del archivo
         posibles_rutas = [
-            "preciosItens2 septo 2025.xls",  # Directorio actual
-            "./preciosItens2 septo 2025.xls",  # Directorio actual explícito
-            "../preciosItens2 septo 2025.xls",  # Directorio padre
-            "data/preciosItens2 septo 2025.xls",  # Subdirectorio data
-            "excel/preciosItens2 septo 2025.xls",  # Subdirectorio excel
+            "preciosItens2 septo 2025.xls",
+            "./preciosItens2 septo 2025.xls",
+            "../preciosItens2 septo 2025.xls",
+            "data/preciosItens2 septo 2025.xls",
+            "excel/preciosItens2 septo 2025.xls",
         ]
         
         file_path = None
@@ -62,18 +62,14 @@ class GeneradorCotizacionesMadera:
             # Intentar leer el archivo Excel con diferentes engines
             df = None
             
-            # Primero intentar con xlrd para archivos .xls
             try:
                 df = pd.read_excel(file_path, engine='xlrd')
             except ImportError:
-                # Si xlrd no está disponible, intentar con openpyxl
                 try:
                     df = pd.read_excel(file_path, engine='openpyxl')
                 except Exception:
-                    # Como último recurso, intentar sin especificar engine
                     df = pd.read_excel(file_path)
             except Exception:
-                # Si xlrd falla por otra razón, intentar con openpyxl
                 try:
                     df = pd.read_excel(file_path, engine='openpyxl')
                 except Exception:
@@ -90,10 +86,10 @@ class GeneradorCotizacionesMadera:
             df = df[df['Referencia'].str.strip() != '']
             df = df[df['Desc. item'].str.strip() != '']
             
-            # Limpiar referencias (quitar espacios en blanco al final)
+            # Limpiar referencias
             df['Referencia'] = df['Referencia'].str.strip()
             
-            # Limpiar precios (convertir a numérico)
+            # Limpiar precios
             columnas_precio = ['LP1', 'LP2', 'LP3']
             
             for col in columnas_precio:
@@ -125,15 +121,11 @@ class GeneradorCotizacionesMadera:
         if pd.isna(precio):
             return 0
         
-        # Si ya es numérico, devolverlo
         if isinstance(precio, (int, float)):
             return float(precio)
         
-        # Convertir a string y limpiar
         precio_str = str(precio)
-        # Remover caracteres no numéricos excepto punto y coma
         precio_limpio = re.sub(r'[^\d.,]', '', precio_str)
-        # Remover comas (separadores de miles)
         precio_limpio = precio_limpio.replace(',', '')
         
         try:
@@ -155,7 +147,7 @@ class GeneradorCotizacionesMadera:
                 'mensaje': 'No hay productos cargados'
             }
         
-        # Filtrar productos que contengan el término de búsqueda en descripción o referencia
+        # Filtrar productos que contengan el término de búsqueda
         mask_desc = self.productos['Desc. item'].str.contains(
             termino_busqueda, 
             case=False, 
@@ -177,7 +169,7 @@ class GeneradorCotizacionesMadera:
         # Combinar máscaras con OR
         mask = mask_desc | mask_ref | mask_desc_corta
         
-        # Filtro adicional por categoría (basado en prefijo de referencia)
+        # Filtro adicional por categoría
         if categoria_filtro:
             mask_categoria = self.productos['Referencia'].str.startswith(
                 categoria_filtro.upper(), 
@@ -226,7 +218,6 @@ class GeneradorCotizacionesMadera:
         if self.productos is None or self.productos.empty:
             return []
         
-        # Extraer primeros 6 caracteres de las referencias para categorías
         prefijos = self.productos['Referencia'].str[:6].unique()
         prefijos = [p for p in prefijos if p and str(p).strip()]
         
@@ -297,7 +288,6 @@ class GeneradorCotizacionesMadera:
         """Generar PDF de la cotización con formato profesional"""
         buffer = BytesIO()
         
-        # Configuración de la página con márgenes equilibrados
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
@@ -308,9 +298,9 @@ class GeneradorCotizacionesMadera:
         )
         
         # Colores corporativos
-        color_principal = colors.Color(27/255, 94/255, 32/255)  # Verde oscuro
-        color_secundario = colors.Color(46/255, 125/255, 50/255)  # Verde medio
-        color_acento = colors.Color(255/255, 193/255, 7/255)  # Amarillo
+        color_principal = colors.Color(27/255, 94/255, 32/255)
+        color_secundario = colors.Color(46/255, 125/255, 50/255)
+        color_acento = colors.Color(255/255, 193/255, 7/255)
         
         # Estilos
         styles = getSampleStyleSheet()
@@ -344,7 +334,6 @@ class GeneradorCotizacionesMadera:
                 'email': 'ventas@empresa.com'
             }
         
-        # Contenido del PDF
         story = []
         
         # HEADER DE LA EMPRESA CON LOGO
@@ -446,7 +435,6 @@ class GeneradorCotizacionesMadera:
             'Referencia', 'Descripción', 'Cantidad', 'Precio Unitario', 'Total'
         ]
         
-        # Datos de productos
         productos_data = [productos_headers]
         
         for item in cotizacion['items']:
@@ -458,7 +446,6 @@ class GeneradorCotizacionesMadera:
                 item['total']
             ])
         
-        # Crear tabla de productos
         productos_table = Table(
             productos_data, 
             colWidths=[1.5*inch, 2.5*inch, 0.8*inch, 1.1*inch, 1.1*inch]
@@ -475,10 +462,10 @@ class GeneradorCotizacionesMadera:
             # Datos
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 7),
-            ('ALIGN', (0, 1), (0, -1), 'CENTER'),  # Referencia centrada
-            ('ALIGN', (1, 1), (1, -1), 'LEFT'),     # Descripción izquierda
-            ('ALIGN', (2, 1), (2, -1), 'CENTER'),   # Cantidad centrada
-            ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),   # Precios a la derecha
+            ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+            ('ALIGN', (1, 1), (1, -1), 'LEFT'),
+            ('ALIGN', (2, 1), (2, -1), 'CENTER'),
+            ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
             
             # Bordes
             ('BOX', (0, 0), (-1, -1), 1, color_principal),
@@ -535,7 +522,6 @@ class GeneradorCotizacionesMadera:
                                      ParagraphStyle('Condition', parent=styles['Normal'], 
                                                   fontSize=9, leftIndent=10)))
         
-        # Generar PDF
         doc.build(story)
         buffer.seek(0)
         return buffer
@@ -550,7 +536,6 @@ class GeneradorCotizacionesMadera:
         ]
 
 def main():
-    # Configuración de la página
     st.set_page_config(
         page_title="Cotizador - Precios Items",
         page_icon="💰",
@@ -558,7 +543,6 @@ def main():
         initial_sidebar_state="collapsed"
     )
     
-    # CSS personalizado
     st.markdown("""
 <style>
     .stApp {
@@ -637,7 +621,6 @@ def main():
     col_logo, col_title = st.columns([1, 4])
     
     with col_logo:
-        # Intentar cargar logo si existe
         logo_path = "logo.png"
         if os.path.exists(logo_path):
             try:
@@ -687,29 +670,28 @@ def main():
                 if uploaded_file is not None:
                     if st.button("🔄 Cargar Archivo Subido"):
                         try:
-                            # Guardar archivo temporalmente
                             with open("temp_" + uploaded_file.name, "wb") as f:
                                 f.write(uploaded_file.getbuffer())
                             
-                            # Cargar desde archivo temporal
-                            df = pd.read_excel("temp_" + uploaded_file.name, engine='xlrd' if uploaded_file.name.endswith('.xls') else 'openpyxl')
+                            df = pd.read_excel("temp_" + uploaded_file.name, 
+                                             engine='xlrd' if uploaded_file.name.endswith('.xls') else 'openpyxl')
                             
-                            # Limpiar referencias
+                            df.columns = df.columns.str.strip()
+                            df = df.dropna(subset=['Referencia', 'Desc. item'])
+                            df = df[df['Referencia'].str.strip() != '']
+                            df = df[df['Desc. item'].str.strip() != '']
                             df['Referencia'] = df['Referencia'].str.strip()
                             
-                            # Limpiar precios
                             for col in ['LP1', 'LP2', 'LP3']:
                                 if col in df.columns:
                                     df[col] = df[col].apply(st.session_state.generador.limpiar_precio)
                             
-                            # Llenar valores nulos de LP2 con LP1
                             if 'LP2' in df.columns and 'LP1' in df.columns:
                                 df['LP2'] = df['LP2'].fillna(df['LP1'])
                             
                             st.session_state.generador.productos = df
                             st.session_state.catalogo_cargado = True
                             
-                            # Limpiar archivo temporal
                             os.remove("temp_" + uploaded_file.name)
                             
                             st.success(f"✅ Archivo cargado exitosamente con {len(df)} productos")
@@ -725,9 +707,6 @@ def main():
     # Verificar si el catálogo está cargado
     if not st.session_state.get('catalogo_cargado', False):
         st.stop()
-    
-    # Layout principal con dos columnas
-    col_main, col_cotizacion = st.columns([2, 1])
     
     with col_main:
         # Configuración principal
@@ -746,7 +725,7 @@ def main():
             categorias = st.session_state.generador.obtener_categorias()
             categoria_filtro = st.selectbox(
                 "📂 Categoría (Opcional):",
-                options=['Todas'] + categorias[:20],  # Limitar a 20 para no sobrecargar
+                options=['Todas'] + categorias[:20],
                 index=0
             )
         
@@ -1085,12 +1064,4 @@ def configurar_datos_empresa():
             st.rerun()
 
 if __name__ == "__main__":
-    main()impiar nombres de columnas
-                            df.columns = df.columns.str.strip()
-                            
-                            # Filtrar filas válidas
-                            df = df.dropna(subset=['Referencia', 'Desc. item'])
-                            df = df[df['Referencia'].str.strip() != '']
-                            df = df[df['Desc. item'].str.strip() != '']
-                            
-                            # L
+    main()
