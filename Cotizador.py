@@ -357,7 +357,7 @@ class GeneradorCotizacionesMadera:
                 <b>Email:</b> {cotizacion['cliente'].get('email', 'N/A')}
                 """, header_style),
                 Paragraph(f"""
-                <b>Lista de Precios:</b> {cotizacion['lista_precio']}<br/>
+                <b>Ubicación:</b> {cotizacion['ubicacion']}<br/>
                 <b>Vencimiento:</b> {cotizacion['fecha_vencimiento']}
                 """, header_style)
             ]
