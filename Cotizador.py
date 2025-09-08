@@ -355,10 +355,9 @@ class GeneradorCotizacionesMadera:
     
     def obtener_condiciones_generales(self):
         return [
-            'Los precios están sujetos a cambios sin previo aviso',
+            'Esta precotizacion no constituye un compromiso oficial.',
             'Tiempos de entrega sujetos a disponibilidad',
-            'Se requiere anticipo para procesar el pedido',
-            'Garantía según especificaciones del proveedor'
+            'Si necesitas ampliar o aceptar esta precotizacion, comunícate con nuestro equipo de ventas al 3046679856'
         ]
 
 def mostrar_cotizacion_completa(cotizacion):
