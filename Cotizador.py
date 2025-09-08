@@ -695,11 +695,10 @@ def main():
                     try:
                         datos_empresa_pdf = st.session_state.get('datos_empresa', {
                             'nombre': 'Empresa',
-                            'nit': '900.XXX.XXX-X',
-                            'direccion': 'Dirección',
-                            'telefono': 'XXX-XXXX',
-                            'ciudad': 'Ciudad',
-                            'email': 'ventas@empresa.com'
+                            'nit': '900.297.110-1',
+                            'direccion': 'Calle 64 No. 58-10, en el barrio Chagualo, Medellín',
+                            'telefono': '3046679856',
+                            'ciudad': 'Medellín'
                         })
                         
                         pdf_buffer = st.session_state.generador.generar_pdf_cotizacion(cotizacion, datos_empresa_pdf)
