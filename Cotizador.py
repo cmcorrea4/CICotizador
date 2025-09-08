@@ -507,7 +507,7 @@ def main():
             st.caption("(Agregar logo.png)")
     
     with col_title:
-        st.markdown('<h1 class="main-title">💰 Cotizador de Precios</h1>', unsafe_allow_html=True)
+        st.markdown('<h1 class="main-title"> Cotizador Construinmuniza </h1>', unsafe_allow_html=True)
         st.markdown('<p style="color: #2E7D32; font-size: 1.2rem; margin-bottom: 2rem;">Sistema de Cotizaciones</p>', unsafe_allow_html=True)
     
     st.markdown("---")
