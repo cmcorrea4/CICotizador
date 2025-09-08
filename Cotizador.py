@@ -542,6 +542,7 @@ def main():
             ubicacion = st.selectbox("📍 Ubicación:", options=['caldas', 'cuiva', 'chagualo'], format_func=lambda x: st.session_state.generador.ubicaciones[x]['nombre'])
         
         with col2:
+            st.write("")
             #categorias = st.session_state.generador.obtener_categorias()
             #categoria_filtro = st.selectbox("📂 Categoría (Opcional):", options=['Todas'] + categorias[:20], index=0)
         
