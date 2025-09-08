@@ -355,9 +355,10 @@ class GeneradorCotizacionesMadera:
     
     def obtener_condiciones_generales(self):
         return [
-            'Esta precotizacion no constituye un compromiso oficial.',
+            'Los precios están sujetos a cambios sin previo aviso',
             'Tiempos de entrega sujetos a disponibilidad',
-            'Si necesitas ampliar o aceptar esta precotizacion, comunícate con nuestro equipo de ventas al 3046679856'
+            'Se requiere anticipo para procesar el pedido',
+            'Garantía según especificaciones del proveedor'
         ]
 
 def mostrar_cotizacion_completa(cotizacion):
@@ -507,8 +508,8 @@ def main():
             st.caption("(Agregar logo.png)")
     
     with col_title:
-        st.markdown('<h1 class="main-title"> Cotizador Construinmuniza </h1>', unsafe_allow_html=True)
-        st.markdown('<p style="color: #2E7D32; font-size: 1.2rem; margin-bottom: 2rem;">Sistema de Precotizaciones</p>', unsafe_allow_html=True)
+        st.markdown('<h1 class="main-title">💰 Cotizador de Precios</h1>', unsafe_allow_html=True)
+        st.markdown('<p style="color: #2E7D32; font-size: 1.2rem; margin-bottom: 2rem;">Sistema de Cotizaciones</p>', unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -524,50 +525,8 @@ def main():
             
             if resultado['exito']:
                 st.session_state.catalogo_cargado = True
-                st.success(f"✅ {resultado['mensaje']}")
-                if 'archivo_encontrado' in resultado:
-                    st.info(f"📁 Archivo encontrado en: {resultado['archivo_encontrado']}")
             else:
                 st.error(f"❌ {resultado['mensaje']}")
-                
-                st.markdown("### 📁 Cargar Archivo Manualmente")
-                st.warning("💡 Como alternativa, puedes cargar el archivo Excel directamente:")
-                
-                uploaded_file = st.file_uploader("Selecciona el archivo Excel", type=['xls', 'xlsx'], help="Sube el archivo 'preciosItens2 septo 2025.xls'")
-                
-                if uploaded_file is not None:
-                    if st.button("🔄 Cargar Archivo Subido"):
-                        try:
-                            with open("temp_" + uploaded_file.name, "wb") as f:
-                                f.write(uploaded_file.getbuffer())
-                            
-                            df = pd.read_excel("temp_" + uploaded_file.name, engine='xlrd' if uploaded_file.name.endswith('.xls') else 'openpyxl')
-                            df.columns = df.columns.str.strip()
-                            df = df.dropna(subset=['Referencia', 'Desc. item'])
-                            df = df[df['Referencia'].str.strip() != '']
-                            df = df[df['Desc. item'].str.strip() != '']
-                            df['Referencia'] = df['Referencia'].str.strip()
-                            
-                            for col in ['LP1', 'LP2', 'LP3']:
-                                if col in df.columns:
-                                    df[col] = df[col].apply(st.session_state.generador.limpiar_precio)
-                            
-                            if 'LP2' in df.columns and 'LP1' in df.columns:
-                                df['LP2'] = df['LP2'].fillna(df['LP1'])
-                            
-                            st.session_state.generador.productos = df
-                            st.session_state.catalogo_cargado = True
-                            
-                            os.remove("temp_" + uploaded_file.name)
-                            
-                            st.success(f"✅ Archivo cargado exitosamente con {len(df)} productos")
-                            st.rerun()
-                            
-                        except Exception as e:
-                            st.error(f"❌ Error al cargar el archivo: {str(e)}")
-                            if os.path.exists("temp_" + uploaded_file.name):
-                                os.remove("temp_" + uploaded_file.name)
-                
                 st.session_state.catalogo_cargado = False
     
     if not st.session_state.get('catalogo_cargado', False):
