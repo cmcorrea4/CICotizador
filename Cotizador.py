@@ -614,9 +614,65 @@ def main():
             if resultado['exito']:
                 st.session_state.catalogo_cargado = True
                 st.success(f"✅ {resultado['mensaje']}")
+                if 'archivo_encontrado' in resultado:
+                    st.info(f"📁 Archivo encontrado en: {resultado['archivo_encontrado']}")
             else:
                 st.error(f"❌ {resultado['mensaje']}")
-                st.warning("💡 Asegúrate de que el archivo 'preciosItens2 septo 2025.xls' esté en el directorio de la aplicación.")
+                
+                # Opción alternativa: cargar archivo manualmente
+                st.markdown("### 📁 Cargar Archivo Manualmente")
+                st.warning("💡 Como alternativa, puedes cargar el archivo Excel directamente:")
+                
+                uploaded_file = st.file_uploader(
+                    "Selecciona el archivo Excel",
+                    type=['xls', 'xlsx'],
+                    help="Sube el archivo 'preciosItens2 septo 2025.xls'"
+                )
+                
+                if uploaded_file is not None:
+                    if st.button("🔄 Cargar Archivo Subido"):
+                        try:
+                            # Guardar archivo temporalmente
+                            with open("temp_" + uploaded_file.name, "wb") as f:
+                                f.write(uploaded_file.getbuffer())
+                            
+                            # Cargar desde archivo temporal
+                            df = pd.read_excel("temp_" + uploaded_file.name, engine='xlrd' if uploaded_file.name.endswith('.xls') else 'openpyxl')
+                            
+                            # Limpiar nombres de columnas
+                            df.columns = df.columns.str.strip()
+                            
+                            # Filtrar filas válidas
+                            df = df.dropna(subset=['Referencia', 'Desc. item'])
+                            df = df[df['Referencia'].str.strip() != '']
+                            df = df[df['Desc. item'].str.strip() != '']
+                            
+                            # Limpiar referencias
+                            df['Referencia'] = df['Referencia'].str.strip()
+                            
+                            # Limpiar precios
+                            for col in ['LP1', 'LP2', 'LP3']:
+                                if col in df.columns:
+                                    df[col] = df[col].apply(st.session_state.generador.limpiar_precio)
+                            
+                            # Llenar valores nulos de LP2 con LP1
+                            if 'LP2' in df.columns and 'LP1' in df.columns:
+                                df['LP2'] = df['LP2'].fillna(df['LP1'])
+                            
+                            st.session_state.generador.productos = df
+                            st.session_state.catalogo_cargado = True
+                            
+                            # Limpiar archivo temporal
+                            os.remove("temp_" + uploaded_file.name)
+                            
+                            st.success(f"✅ Archivo cargado exitosamente con {len(df)} productos")
+                            st.rerun()
+                            
+                        except Exception as e:
+                            st.error(f"❌ Error al cargar el archivo: {str(e)}")
+                            if os.path.exists("temp_" + uploaded_file.name):
+                                os.remove("temp_" + uploaded_file.name)
+                
                 st.session_state.catalogo_cargado = False
     
     # Verificar si el catálogo está cargado
