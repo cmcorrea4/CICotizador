@@ -355,10 +355,9 @@ class GeneradorCotizacionesMadera:
     
     def obtener_condiciones_generales(self):
         return [
-            'Los precios están sujetos a cambios sin previo aviso',
+            'Esta precotizacion no constituye un compromiso oficial',
             'Tiempos de entrega sujetos a disponibilidad',
-            'Se requiere anticipo para procesar el pedido',
-            'Garantía según especificaciones del proveedor'
+            'Si necesitas ampliar o aceptar esta precotizacion, comunícate con nuestro equipo de ventas al 3046679856'
         ]
 
 def mostrar_cotizacion_completa(cotizacion):
@@ -508,8 +507,8 @@ def main():
             st.caption("(Agregar logo.png)")
     
     with col_title:
-        st.markdown('<h1 class="main-title">💰 Cotizador de Precios</h1>', unsafe_allow_html=True)
-        st.markdown('<p style="color: #2E7D32; font-size: 1.2rem; margin-bottom: 2rem;">Sistema de Cotizaciones</p>', unsafe_allow_html=True)
+        st.markdown('<h1 class="main-title">Precotizador Construinmuniza</h1>', unsafe_allow_html=True)
+        st.markdown('<p style="color: #2E7D32; font-size: 1.2rem; margin-bottom: 2rem;">Aplicación para Precotizaciones</p>', unsafe_allow_html=True)
     
     st.markdown("---")
     
