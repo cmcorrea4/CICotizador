@@ -598,12 +598,10 @@ def main():
         
         if termino_busqueda:
             with st.spinner('🔍 Buscando productos...'):
-                categoria_filter = None if categoria_filtro == 'Todas' else categoria_filtro
-                resultados = st.session_state.generador.buscar_productos(termino_busqueda, ubicacion=ubicacion, limite=20, categoria_filtro=categoria_filter)
+                resultados = st.session_state.generador.buscar_productos(termino_busqueda, ubicacion=ubicacion, limite=20)
             
             if resultados['exito']:
-                filtro_info = f" en {categoria_filtro}" if categoria_filtro != 'Todas' else ""
-                st.markdown(f"### 📦 Productos encontrados ({resultados['total']}){filtro_info}")
+                st.markdown(f"### 📦 Productos encontrados ({resultados['total']})")
                 
                 for i, producto in enumerate(resultados['resultados']):
                     with st.expander(f"📦 {producto['descripcion_corta']} - {producto['precio']}"):
@@ -612,7 +610,6 @@ def main():
                         with col1:
                             st.write(f"**📋 Referencia:** {producto['referencia']}")
                             st.write(f"**📝 Descripción:** {producto['descripcion']}")
-                            st.write(f"**📄 Notas:** {producto['notas'][:50]}..." if len(producto['notas']) > 50 else f"**📄 Notas:** {producto['notas']}")
                         
                         with col2:
                             st.write(f"**📍 Ubicación:** {producto['nombre_ubicacion']}")
