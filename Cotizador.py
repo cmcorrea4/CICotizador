@@ -698,7 +698,8 @@ def main():
                             'nit': '900.297.110-1',
                             'direccion': 'Calle 64 No. 58-10, en el barrio Chagualo, Medellín',
                             'telefono': '3046679856',
-                            'ciudad': 'Medellín'
+                            'ciudad': 'Medellín',
+                            'email': ''
                         })
                         
                         pdf_buffer = st.session_state.generador.generar_pdf_cotizacion(cotizacion, datos_empresa_pdf)
