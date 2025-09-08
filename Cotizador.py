@@ -17,26 +17,70 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 class GeneradorCotizacionesMadera:
     def __init__(self):
         self.productos = None
-        self.listas_precio = {
-            'LP1': 'Lista de Precios 1',
-            'LP2': 'Lista de Precios 2', 
-            'LP3': 'Lista de Precios 3'
+        self.ubicaciones = {
+            'caldas': {
+                'lista': 'LP1',
+                'nombre': 'Caldas'
+            },
+            'cuiva': {
+                'lista': 'LP2', 
+                'nombre': 'Cuiva'
+            },
+            'chagualo': {
+                'lista': 'LP3',
+                'nombre': 'Chagualo'
+            }
         }
         
     def cargar_excel_automatico(self):
         """Cargar productos desde archivo Excel automáticamente"""
-        file_path = "preciosItens2 septo 2025.xls"
+        # Posibles ubicaciones del archivo
+        posibles_rutas = [
+            "preciosItens2 septo 2025.xls",  # Directorio actual
+            "./preciosItens2 septo 2025.xls",  # Directorio actual explícito
+            "../preciosItens2 septo 2025.xls",  # Directorio padre
+            "data/preciosItens2 septo 2025.xls",  # Subdirectorio data
+            "excel/preciosItens2 septo 2025.xls",  # Subdirectorio excel
+        ]
+        
+        file_path = None
+        
+        # Buscar el archivo en las posibles ubicaciones
+        for ruta in posibles_rutas:
+            if os.path.exists(ruta):
+                file_path = ruta
+                break
+        
+        if file_path is None:
+            return {
+                'exito': False,
+                'error': "Archivo no encontrado",
+                'mensaje': f'No se encontró el archivo "preciosItens2 septo 2025.xls" en ninguna de estas ubicaciones: {", ".join(posibles_rutas)}'
+            }
         
         try:
-            if not os.path.exists(file_path):
-                return {
-                    'exito': False,
-                    'error': f"No se encontró el archivo '{file_path}'",
-                    'mensaje': f'Archivo {file_path} no encontrado en el directorio'
-                }
+            # Intentar leer el archivo Excel con diferentes engines
+            df = None
             
-            # Leer el archivo Excel
-            df = pd.read_excel(file_path, engine='xlrd')
+            # Primero intentar con xlrd para archivos .xls
+            try:
+                df = pd.read_excel(file_path, engine='xlrd')
+            except ImportError:
+                # Si xlrd no está disponible, intentar con openpyxl
+                try:
+                    df = pd.read_excel(file_path, engine='openpyxl')
+                except Exception:
+                    # Como último recurso, intentar sin especificar engine
+                    df = pd.read_excel(file_path)
+            except Exception:
+                # Si xlrd falla por otra razón, intentar con openpyxl
+                try:
+                    df = pd.read_excel(file_path, engine='openpyxl')
+                except Exception:
+                    df = pd.read_excel(file_path)
+            
+            if df is None:
+                raise Exception("No se pudo leer el archivo con ningún engine disponible")
             
             # Limpiar nombres de columnas
             df.columns = df.columns.str.strip()
@@ -65,14 +109,15 @@ class GeneradorCotizacionesMadera:
             return {
                 'exito': True,
                 'total_productos': len(df),
-                'mensaje': f'Excel cargado exitosamente con {len(df)} productos',
-                'columnas': list(df.columns)
+                'mensaje': f'Excel cargado exitosamente desde "{file_path}" con {len(df)} productos',
+                'columnas': list(df.columns),
+                'archivo_encontrado': file_path
             }
         except Exception as e:
             return {
                 'exito': False,
                 'error': str(e),
-                'mensaje': 'Error al cargar el archivo Excel'
+                'mensaje': f'Error al cargar el archivo Excel desde "{file_path}": {str(e)}. Posibles soluciones: 1) Instalar xlrd con "pip install xlrd", 2) Convertir el archivo a formato .xlsx, 3) Usar la opción de carga manual'
             }
     
     def limpiar_precio(self, precio):
@@ -102,7 +147,7 @@ class GeneradorCotizacionesMadera:
             return "$ 0"
         return f"$ {precio:,.0f}".replace(',', '.')
     
-    def buscar_productos(self, termino_busqueda, lista_precio='LP1', limite=10, categoria_filtro=None):
+    def buscar_productos(self, termino_busqueda, ubicacion='caldas', limite=10, categoria_filtro=None):
         """Buscar productos por descripción"""
         if self.productos is None or self.productos.empty:
             return {
@@ -151,7 +196,7 @@ class GeneradorCotizacionesMadera:
         # Formatear resultados
         productos_formateados = []
         for _, producto in resultados.iterrows():
-            producto_formateado = self.formatear_producto(producto, lista_precio)
+            producto_formateado = self.formatear_producto(producto, ubicacion)
             productos_formateados.append(producto_formateado)
         
         return {
@@ -160,8 +205,9 @@ class GeneradorCotizacionesMadera:
             'total': len(productos_formateados)
         }
     
-    def formatear_producto(self, producto, lista_precio='LP1'):
+    def formatear_producto(self, producto, ubicacion='caldas'):
         """Formatear un producto con toda la información"""
+        lista_precio = self.ubicaciones[ubicacion]['lista']
         precio = producto.get(lista_precio, 0)
         
         return {
@@ -169,14 +215,10 @@ class GeneradorCotizacionesMadera:
             'descripcion': producto.get('Desc. item', ''),
             'descripcion_corta': producto.get('Desc. corta item', ''),
             'notas': producto.get('Notas ítem', ''),
-            'lista_precio': lista_precio,
+            'ubicacion': ubicacion,
+            'nombre_ubicacion': self.ubicaciones[ubicacion]['nombre'],
             'precio': self.formatear_precio(precio),
-            'precio_numerico': precio,
-            'precios': {
-                'LP1': producto.get('LP1', 0),
-                'LP2': producto.get('LP2', 0),
-                'LP3': producto.get('LP3', 0)
-            }
+            'precio_numerico': precio
         }
     
     def obtener_categorias(self):
@@ -195,7 +237,7 @@ class GeneradorCotizacionesMadera:
         if opciones is None:
             opciones = {}
             
-        lista_precio = opciones.get('lista_precio', 'LP1')
+        ubicacion = opciones.get('ubicacion', 'caldas')
         descuento_porcentaje = opciones.get('descuento', 0)
         validez_dias = opciones.get('validez_dias', 30)
         
@@ -232,7 +274,7 @@ class GeneradorCotizacionesMadera:
             'fecha': fecha_actual.strftime('%d/%m/%Y'),
             'fecha_vencimiento': fecha_vencimiento.strftime('%d/%m/%Y'),
             'cliente': datos_cliente,
-            'lista_precio': self.listas_precio.get(lista_precio, lista_precio),
+            'ubicacion': self.ubicaciones[ubicacion]['nombre'],
             'items': items_cotizacion,
             'resumen': {
                 'subtotal': self.formatear_precio(subtotal),
@@ -305,18 +347,15 @@ class GeneradorCotizacionesMadera:
         # Contenido del PDF
         story = []
         
-        # HEADER DE LA EMPRESA
-        header_data = [
-            [
-                Paragraph(f"""
-                <b>{datos_empresa['nombre']}</b><br/>
-                NIT: {datos_empresa['nit']}<br/>
-                {datos_empresa['direccion']}<br/>
-                Tel: {datos_empresa['telefono']}<br/>
-                {datos_empresa['ciudad']}<br/>
-                {datos_empresa['email']}
-                """, header_style),
-                Paragraph(f"""
+        # HEADER DE LA EMPRESA CON LOGO
+        logo_element = None
+        logo_path = "logo.png"
+        
+        if os.path.exists(logo_path):
+            try:
+                logo_element = Image(logo_path, width=80, height=80)
+            except Exception as e:
+                logo_element = Paragraph(f"""
                 <b>COTIZACIÓN</b><br/>
                 No. {cotizacion['numero_cotizacion']}<br/>
                 Fecha: {cotizacion['fecha']}
@@ -328,6 +367,31 @@ class GeneradorCotizacionesMadera:
                     alignment=TA_RIGHT,
                     fontName='Helvetica-Bold'
                 ))
+        else:
+            logo_element = Paragraph(f"""
+            <b>COTIZACIÓN</b><br/>
+            No. {cotizacion['numero_cotizacion']}<br/>
+            Fecha: {cotizacion['fecha']}
+            """, ParagraphStyle(
+                'HeaderRight',
+                parent=styles['Normal'],
+                fontSize=12,
+                textColor=color_principal,
+                alignment=TA_RIGHT,
+                fontName='Helvetica-Bold'
+            ))
+        
+        header_data = [
+            [
+                Paragraph(f"""
+                <b>{datos_empresa['nombre']}</b><br/>
+                NIT: {datos_empresa['nit']}<br/>
+                {datos_empresa['direccion']}<br/>
+                Tel: {datos_empresa['telefono']}<br/>
+                {datos_empresa['ciudad']}<br/>
+                {datos_empresa['email']}
+                """, header_style),
+                logo_element
             ]
         ]
         
@@ -484,30 +548,6 @@ class GeneradorCotizacionesMadera:
             'Se requiere anticipo para procesar el pedido',
             'Garantía según especificaciones del proveedor'
         ]
-    
-    def obtener_estadisticas(self):
-        """Obtener estadísticas del catálogo"""
-        if self.productos is None or self.productos.empty:
-            return None
-        
-        stats = {
-            'total_productos': len(self.productos),
-            'categorias': self.obtener_categorias()
-        }
-        
-        # Estadísticas de precios por lista
-        for lista in ['LP1', 'LP2', 'LP3']:
-            if lista in self.productos.columns:
-                precios = self.productos[lista].dropna()
-                if not precios.empty:
-                    stats[f'precios_{lista}'] = {
-                        'min': precios.min(),
-                        'max': precios.max(),
-                        'promedio': precios.mean(),
-                        'productos_con_precio': len(precios)
-                    }
-        
-        return stats
 
 def main():
     # Configuración de la página
@@ -532,8 +572,7 @@ def main():
     .main-title {
         font-size: 2.5rem;
         font-weight: 700;
-        text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
         background: linear-gradient(135deg, #1B5E20, #2E7D32);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -594,9 +633,25 @@ def main():
 </style>
 """, unsafe_allow_html=True)
     
-    # Título principal
-    st.markdown('<h1 class="main-title">💰 Cotizador de Precios</h1>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align: center; color: #2E7D32; font-size: 1.2rem; margin-bottom: 2rem;">Sistema de Cotizaciones</p>', unsafe_allow_html=True)
+    # Título principal con espacio para logo
+    col_logo, col_title = st.columns([1, 4])
+    
+    with col_logo:
+        # Intentar cargar logo si existe
+        logo_path = "logo.png"
+        if os.path.exists(logo_path):
+            try:
+                st.image(logo_path, width=120)
+            except:
+                st.markdown("**LOGO**")
+        else:
+            st.markdown("**LOGO**")
+            st.caption("(Agregar logo.png)")
+    
+    with col_title:
+        st.markdown('<h1 class="main-title">💰 Cotizador de Precios</h1>', unsafe_allow_html=True)
+        st.markdown('<p style="color: #2E7D32; font-size: 1.2rem; margin-bottom: 2rem;">Sistema de Cotizaciones</p>', unsafe_allow_html=True)
+    
     st.markdown("---")
     
     # Inicializar el generador
@@ -639,14 +694,6 @@ def main():
                             # Cargar desde archivo temporal
                             df = pd.read_excel("temp_" + uploaded_file.name, engine='xlrd' if uploaded_file.name.endswith('.xls') else 'openpyxl')
                             
-                            # Limpiar nombres de columnas
-                            df.columns = df.columns.str.strip()
-                            
-                            # Filtrar filas válidas
-                            df = df.dropna(subset=['Referencia', 'Desc. item'])
-                            df = df[df['Referencia'].str.strip() != '']
-                            df = df[df['Desc. item'].str.strip() != '']
-                            
                             # Limpiar referencias
                             df['Referencia'] = df['Referencia'].str.strip()
                             
@@ -679,29 +726,6 @@ def main():
     if not st.session_state.get('catalogo_cargado', False):
         st.stop()
     
-    # Obtener estadísticas del catálogo
-    stats = st.session_state.generador.obtener_estadisticas()
-    if stats:
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.markdown(f'<div class="metric-container"><h3>{stats["total_productos"]}</h3><p>Productos Total</p></div>', unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f'<div class="metric-container"><h3>{len(stats["categorias"])}</h3><p>Categorías</p></div>', unsafe_allow_html=True)
-        
-        with col3:
-            if 'precios_LP1' in stats:
-                precio_min = st.session_state.generador.formatear_precio(stats['precios_LP1']['min'])
-                st.markdown(f'<div class="metric-container"><h3>{precio_min}</h3><p>Precio Mínimo</p></div>', unsafe_allow_html=True)
-        
-        with col4:
-            if 'precios_LP1' in stats:
-                precio_max = st.session_state.generador.formatear_precio(stats['precios_LP1']['max'])
-                st.markdown(f'<div class="metric-container"><h3>{precio_max}</h3><p>Precio Máximo</p></div>', unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
     # Layout principal con dos columnas
     col_main, col_cotizacion = st.columns([2, 1])
     
@@ -712,10 +736,10 @@ def main():
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            lista_precio = st.selectbox(
-                "💰 Lista de Precios:",
-                options=['LP1', 'LP2', 'LP3'],
-                format_func=lambda x: f"Lista {x[-1]}"
+            ubicacion = st.selectbox(
+                "📍 Ubicación:",
+                options=['caldas', 'cuiva', 'chagualo'],
+                format_func=lambda x: st.session_state.generador.ubicaciones[x]['nombre']
             )
         
         with col2:
@@ -745,7 +769,7 @@ def main():
                 
                 resultados = st.session_state.generador.buscar_productos(
                     termino_busqueda, 
-                    lista_precio=lista_precio,
+                    ubicacion=ubicacion,
                     limite=20,
                     categoria_filtro=categoria_filter
                 )
@@ -765,13 +789,8 @@ def main():
                             st.write(f"**📄 Notas:** {producto['notas'][:50]}..." if len(producto['notas']) > 50 else f"**📄 Notas:** {producto['notas']}")
                         
                         with col2:
-                            st.write(f"**💰 Lista Actual:** {producto['lista_precio']}")
+                            st.write(f"**📍 Ubicación:** {producto['nombre_ubicacion']}")
                             st.write(f"**💲 Precio:** {producto['precio']}")
-                            # Comparación de precios
-                            st.write("**💲 Comparación de listas:**")
-                            st.write(f"LP1: {st.session_state.generador.formatear_precio(producto['precios']['LP1'])}")
-                            st.write(f"LP2: {st.session_state.generador.formatear_precio(producto['precios']['LP2'])}")
-                            st.write(f"LP3: {st.session_state.generador.formatear_precio(producto['precios']['LP3'])}")
                         
                         with col3:
                             # Control de cantidad y botón agregar
@@ -852,7 +871,7 @@ def main():
                     }
                     
                     opciones = {
-                        'lista_precio': lista_precio,
+                        'ubicacion': ubicacion,
                         'descuento': descuento,
                         'validez_dias': validez_dias
                     }
@@ -979,7 +998,7 @@ def mostrar_cotizacion_completa(cotizacion):
         st.info(f"**👤 Cliente:** {cotizacion['cliente']['nombre']}\n\n**🆔 NIT/Cédula:** {cotizacion['cliente'].get('nit_cedula', 'N/A')}")
     
     with col3:
-        st.info(f"**💰 Lista:** {cotizacion['lista_precio']}")
+        st.info(f"**📍 Ubicación:** {cotizacion['ubicacion']}")
     
     # Detalles de productos
     st.markdown("### 📦 Productos Cotizados")
@@ -1066,4 +1085,12 @@ def configurar_datos_empresa():
             st.rerun()
 
 if __name__ == "__main__":
-    main()
+    main()impiar nombres de columnas
+                            df.columns = df.columns.str.strip()
+                            
+                            # Filtrar filas válidas
+                            df = df.dropna(subset=['Referencia', 'Desc. item'])
+                            df = df[df['Referencia'].str.strip() != '']
+                            df = df[df['Desc. item'].str.strip() != '']
+                            
+                            # L
