@@ -552,7 +552,7 @@ def main():
         st.markdown("---")
         
         st.markdown("### 🔍 Buscar Productos")
-        termino_busqueda = st.text_input("Describe el producto que buscas:", placeholder="Ej: alambre, tabla, estacón, grapa, viga...")
+        termino_busqueda = st.text_input("Describe el producto que buscas y presiona enter o dale click afuera:", placeholder="Ej: alambre, tabla, estacón, grapa, viga...")
         
         if termino_busqueda:
             with st.spinner('🔍 Buscando productos...'):
